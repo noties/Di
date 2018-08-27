@@ -1,0 +1,39 @@
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.1'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+ext {
+
+    config = [
+            'min-sdk'    : 16,
+            'target-sdk' : 27,
+            'build-tools': '27.0.3'
+    ]
+
+    final def supportVersion = '27.1.1'
+
+    deps = [
+            'javax-inject'       : 'javax.inject:javax.inject:1',
+            'lazy'               : 'ru.noties:lazy:1.1.0',
+            'debug'              : 'ru.noties:debug:3.0.0@jar',
+            'support-annotations': "com.android.support:support-annotations:$supportVersion",
+            'support-fragment'   : "com.android.support:support-fragment:$supportVersion"
+    ]
+}
