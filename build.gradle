@@ -37,4 +37,8 @@ ext {
             'support-annotations': "com.android.support:support-annotations:$supportVersion",
             'support-fragment'   : "com.android.support:support-fragment:$supportVersion"
     ]
+
+    deps['test'] = [
+            'junit': 'junit:junit:4.12'
+    ]
 }

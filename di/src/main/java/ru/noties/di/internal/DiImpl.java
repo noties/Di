@@ -26,14 +26,13 @@ public class DiImpl implements Di, DiCloseable {
     // todo: maybe DiDebug(Di) -> to allow for runtime inspection?
     // todo: maybe make Di abstract and move this one in `internal` package
     // todo: proguard (https://github.com/zsoltherpai/feather/pull/11/files)
-    // todo: inheritance (of injected objects?) as an config option maybe?
-    // todo: add path to instance specific errors
     // todo: investigate self-container injection... to swap some implementation details?
     // todo: create logger interface & configuration
-    // todo: wildcard reflect type (why not?)
     // todo: https://stackoverflow.com/questions/6762012/suppress-variable-is-never-assigned-warning-in-intellij-idea#comment34257832_6762287
     // todo: #close -> should clear explicit dependencies from children also...
     //      we should not rely on a method invocation in children to clear cached dependencies
+    //      as a second thought we could allow it...
+    // todo: should we handle get(Key.of(Di.class)) and immediately return self?
 
     @NonNull
     public static DiImpl root(@NonNull String id, Module... modules) {
@@ -43,7 +42,7 @@ public class DiImpl implements Di, DiCloseable {
     @NonNull
     public static DiImpl root(@NonNull String id, @NonNull Collection<Module> modules) {
         return new DiImpl(
-                InternalDependencies.create(),
+                InternalDependencies.create(false),
                 null,
                 id,
                 CollectionUtils.requireNoNulls(
@@ -128,7 +127,7 @@ public class DiImpl implements Di, DiCloseable {
 
         if (pendingInjections.contains(key)) {
             throw DiException.halt("%s, Recursive injection for the key: %s",
-                    this, key);
+                    path(), key);
         }
 
         pendingInjections.add(key);

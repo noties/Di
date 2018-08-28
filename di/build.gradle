@@ -1,17 +1,11 @@
-apply plugin: 'com.android.library'
+apply plugin: 'java-library'
 
-android {
-
-    compileSdkVersion config['target-sdk']
-    buildToolsVersion config['build-tools']
-
-    defaultConfig {
-        minSdkVersion config['min-sdk']
-        targetSdkVersion config['target-sdk']
-        versionCode 1
-        versionName '1.0.0'
-    }
+sourceSets {
+    main.java.srcDirs += './build/src-gen/'
 }
+
+targetCompatibility = JavaVersion.VERSION_1_7
+sourceCompatibility = JavaVersion.VERSION_1_7
 
 dependencies {
 
@@ -20,4 +14,31 @@ dependencies {
         api it['support-annotations']
         api it['lazy']
     }
+
+    deps['test'].with {
+        testImplementation it['junit']
+    }
+}
+
+task generateBuildConfig {
+    final def folder = file('build/src-gen/ru/noties/di/')
+    folder.mkdirs()
+    new File(folder, 'BuildConfig.java').withWriter("UTF-8", {
+        it.write(
+                """
+package ru.noties.di;
+
+public abstract class BuildConfig {
+
+  public static final String VERSION_NAME = \"$version\";
+
+  private BuildConfig() {
+  }
+}
+""")
+    })
+}
+
+afterEvaluate {
+    compileJava.dependsOn generateBuildConfig
 }

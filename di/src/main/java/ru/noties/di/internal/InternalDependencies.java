@@ -14,8 +14,8 @@ abstract class InternalDependencies {
     abstract ServiceInjector serviceInjector();
 
     @NonNull
-    static InternalDependencies create() {
-        return new Impl();
+    static InternalDependencies create(boolean allowInheritance) {
+        return new Impl(allowInheritance);
     }
 
     static class Impl extends InternalDependencies {
@@ -24,12 +24,12 @@ abstract class InternalDependencies {
         private final ImplicitProviderCreator implicitProviderCreator;
         private final ServiceInjector serviceInjector;
 
-        Impl() {
+        Impl(boolean allowInheritance) {
 
             final InjectConstructorFinder injectConstructorFinder = InjectConstructorFinder.create();
 
             final DependenciesDeclarationsCreator dependenciesDeclarationsCreator =
-                    DependenciesDeclarationsCreator.create(KeyCreator.create());
+                    DependenciesDeclarationsCreator.create(allowInheritance, KeyCreator.create());
 
             this.explicitBuilder = ExplicitBuilder.create(
                     ModuleMerger.create(ModuleBindingKeyCreator.create()),
