@@ -10,7 +10,7 @@ android {
         minSdkVersion config['min-sdk']
         targetSdkVersion config['target-sdk']
         versionCode 1
-        versionName '1.0.0'
+        versionName version
     }
 
     compileOptions {

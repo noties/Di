@@ -31,6 +31,7 @@ public class App extends Application {
         final Configuration configuration = Configuration.builder()
                 .allowInheritance(false)
                 .logger(AndroidLogger.create(true))
+                .disableImplicitDependencies(false)
                 .build();
 
         return DiImpl.root(configuration, "App", new AppModule(this), new Module() {

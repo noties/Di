@@ -23,7 +23,7 @@ public abstract class FragmentInjector {
                             ((Di.Service) f).init(di);
                         }
                     }
-                }, false); // <- false, so child fragments are created by holders
+                }, false); // <- false, so child fragments are handled by parents
             }
         };
     }
