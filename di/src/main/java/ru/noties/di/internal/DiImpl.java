@@ -22,12 +22,9 @@ public class DiImpl implements Di, DiCloseable {
     // todo: maybe provide a way to disable implicit dependencies?
     // todo: simple test module to validate that all dependencies can be satisfied
     // todo: design so that we can easily introduce annotation processor
-    // todo: we can create id: `/parent-id1/parent-id2/id`
-    //       we also can have a simple flag indicating if someone in the path is closed!
-    //       `/parent/[X]parent-closed/id`
+    // todo: maybe introduce `reflection` option when annotation processor is implemented (if of cause)
     // todo: maybe DiDebug(Di) -> to allow for runtime inspection?
     // todo: maybe make Di abstract and move this one in `internal` package
-    // todo: maybe introduce `reflection` option when annotation processor is implemented (if of cause)
     // todo: proguard (https://github.com/zsoltherpai/feather/pull/11/files)
     // todo: inheritance (of injected objects?) as an config option maybe?
     // todo: add path to instance specific errors

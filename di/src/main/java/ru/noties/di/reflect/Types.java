@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 
 public abstract class Types {
 
@@ -29,6 +30,10 @@ public abstract class Types {
         } else if (type instanceof GenericArrayType) {
             final GenericArrayType g = (GenericArrayType) type;
             return new GenericArrayTypeImpl(g.getGenericComponentType());
+
+        } else if (type instanceof WildcardType) {
+            final WildcardType w = (WildcardType) type;
+            return new WildcardTypeImpl(w.getUpperBounds(), w.getLowerBounds());
 
         } else {
             return type;
