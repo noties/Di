@@ -13,7 +13,7 @@ import ru.noties.lazy.Lazy;
 abstract class ModuleBindingProviderCreator {
 
     @NonNull
-    abstract Di.Provider create(@NonNull Key key, @NonNull ModuleBinding binding);
+    abstract Di.Contributor create(@NonNull Key key, @NonNull ModuleBinding binding);
 
     @NonNull
     static ModuleBindingProviderCreator create(
@@ -36,7 +36,7 @@ abstract class ModuleBindingProviderCreator {
 
         @NonNull
         @Override
-        Di.Provider create(@NonNull Key key, @NonNull ModuleBinding binding) {
+        Di.Contributor create(@NonNull Key key, @NonNull ModuleBinding binding) {
 
             // originType OR provider
             //  let's create an abstraction and make origin type through provider also
@@ -58,7 +58,7 @@ abstract class ModuleBindingProviderCreator {
             //  we cannot use key here
             // if exact != null && !class -> throw cannot bind it
 
-            Di.Provider diProvider;
+            Di.Contributor contributor;
 
             if (exact != null) {
 
@@ -68,108 +68,96 @@ abstract class ModuleBindingProviderCreator {
 
                 final Class cl = (Class) exact;
 
-                diProvider = new FieldInjectionProvider(
+                contributor = new FieldInjectionContributor(
                         injectConstructorFinder.find(cl),
                         dependenciesDeclarationsCreator.create(cl)
                 );
             } else {
-                diProvider = new Di.Provider() {
+                contributor = new Di.Contributor() {
                     @NonNull
                     @Override
-                    public Object provide(@NonNull Di di) {
+                    public Object contribute(@NonNull Di di) {
                         return provider.provide();
                     }
                 };
             }
 
-            // now, let's deal with singleton, lazy and provider
-            // aha... we must change key here is lazy or provider
-
-            // first provider
-
-            // okay: lazy<provider> and singleton
-            // singleton is the last one
-            // then lazy
-            // then provider
-
-            // the thing is we might not need a special handling for provider?
-
             if (binding.isProvider()) {
-                diProvider = new ProviderProvider(diProvider);
+                contributor = new ProviderContributor(contributor);
             }
 
             if (binding.isLazy()) {
-                diProvider = new LazyProvider(diProvider);
+                contributor = new LazyContributor(contributor);
             }
 
             if (binding.isSingleton()) {
-                diProvider = new SingletonProvider(diProvider);
+                contributor = new SingletonContributor(contributor);
             }
 
-            return diProvider;
+            return contributor;
         }
 
-        private static class ProviderProvider implements Di.Provider {
+        private static class ProviderContributor implements Di.Contributor {
 
-            private final Di.Provider parent;
+            private final Di.Contributor parent;
 
-            ProviderProvider(@NonNull Di.Provider parent) {
+            ProviderContributor(@NonNull Di.Contributor parent) {
                 this.parent = parent;
             }
 
             @NonNull
             @Override
-            public Object provide(@NonNull final Di di) {
+            public Object contribute(@NonNull final Di di) {
                 return new Provider() {
                     @NonNull
                     @Override
                     public Object provide() {
-                        return parent.provide(di);
+                        return parent.contribute(di);
                     }
                 };
             }
         }
 
-        private static class LazyProvider implements Di.Provider {
+        private static class LazyContributor implements Di.Contributor {
 
-            private final Di.Provider parent;
+            private final Di.Contributor parent;
 
-            LazyProvider(@NonNull Di.Provider parent) {
+            LazyContributor(@NonNull Di.Contributor parent) {
                 this.parent = parent;
             }
 
             @NonNull
             @Override
-            public Object provide(@NonNull final Di di) {
+            public Object contribute(@NonNull final Di di) {
                 return Lazy.of(new Lazy.Provider<Object>() {
                     @NonNull
                     @Override
                     public Object provide() {
-                        return parent.provide(di);
+                        return parent.contribute(di);
                     }
                 });
             }
         }
 
-        private static class SingletonProvider implements Di.Provider {
+        private static class SingletonContributor implements Di.Contributor {
 
-            private final Di.Provider parent;
+            private final Di.Contributor parent;
             private final Object lock = new Object();
             private Object value;
 
-            SingletonProvider(@NonNull Di.Provider parent) {
+            SingletonContributor(@NonNull Di.Contributor parent) {
                 this.parent = parent;
             }
 
             @NonNull
             @Override
-            public Object provide(@NonNull Di di) {
+            public Object contribute(@NonNull Di di) {
                 Object o = value;
                 if (o == null) {
                     synchronized (lock) {
                         o = value;
                         if (o == null) {
-                            o = value = parent.provide(di);
+                            o = value = parent.contribute(di);
                         }
                     }
                 }

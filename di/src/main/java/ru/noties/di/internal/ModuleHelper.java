@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import ru.noties.di.Binding;
+import ru.noties.di.ModuleBindingBuilder;
 import ru.noties.di.ModuleBinding;
 import ru.noties.di.Provider;
 
@@ -18,10 +18,10 @@ public abstract class ModuleHelper {
     public abstract List<ModuleBinding> bindings();
 
     @NonNull
-    public abstract <T> Binding.Typed<T> bind(@NonNull Class<T> type);
+    public abstract <T> ModuleBindingBuilder.Typed<T> bind(@NonNull Class<T> type);
 
     @NonNull
-    public abstract Binding.Raw bind(@NonNull Type type);
+    public abstract ModuleBindingBuilder.Raw bind(@NonNull Type type);
 
 
     @NonNull
@@ -41,25 +41,25 @@ public abstract class ModuleHelper {
 
         @NonNull
         @Override
-        public <T> Binding.Typed<T> bind(@NonNull Class<T> type) {
+        public <T> ModuleBindingBuilder.Typed<T> bind(@NonNull Class<T> type) {
             final ModuleBindingImpl binding = new ModuleBindingImpl(type);
             bindings.add(binding);
-            return new BindingTypedImpl<>(binding);
+            return new ModuleBindingBuilderTypedImpl<>(binding);
         }
 
         @NonNull
         @Override
-        public Binding.Raw bind(@NonNull Type type) {
+        public ModuleBindingBuilder.Raw bind(@NonNull Type type) {
             final ModuleBindingImpl binding = new ModuleBindingImpl(type);
             bindings.add(binding);
-            return new BindingImpl(binding);
+            return new ModuleBindingBuilderImpl(binding);
         }
 
-        private static class BindingImpl implements Binding, Binding.Raw, Binding.QualifiersOrModifiers {
+        private static class ModuleBindingBuilderImpl implements ModuleBindingBuilder, ModuleBindingBuilder.Raw, ModuleBindingBuilder.QualifiersOrModifiers {
 
             final ModuleBindingImpl binding;
 
-            private BindingImpl(@NonNull ModuleBindingImpl binding) {
+            private ModuleBindingBuilderImpl(@NonNull ModuleBindingImpl binding) {
                 this.binding = binding;
             }
 
@@ -113,9 +113,9 @@ public abstract class ModuleHelper {
             }
         }
 
-        private static class BindingTypedImpl<T> extends BindingImpl implements Binding.Typed<T> {
+        private static class ModuleBindingBuilderTypedImpl<T> extends ModuleBindingBuilderImpl implements ModuleBindingBuilder.Typed<T> {
 
-            private BindingTypedImpl(@NonNull ModuleBindingImpl binding) {
+            private ModuleBindingBuilderTypedImpl(@NonNull ModuleBindingImpl binding) {
                 super(binding);
             }
 

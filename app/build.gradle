@@ -26,5 +26,6 @@ dependencies {
     deps.with {
         implementation it['debug']
         implementation it['support-fragment']
+        implementation it['lifebus']
     }
 }

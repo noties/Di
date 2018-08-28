@@ -10,12 +10,12 @@ import ru.noties.di.Di;
 import ru.noties.di.Key;
 import ru.noties.di.OnInjected;
 
-class FieldInjectionProvider implements Di.Provider {
+class FieldInjectionContributor implements Di.Contributor {
 
     private final Constructor constructor;
     private final Map<Field, Key> fields;
 
-    FieldInjectionProvider(
+    FieldInjectionContributor(
             @NonNull Constructor constructor,
             @NonNull Map<Field, Key> fields) {
         this.constructor = constructor;
@@ -24,7 +24,7 @@ class FieldInjectionProvider implements Di.Provider {
 
     @NonNull
     @Override
-    public Object provide(@NonNull Di di) {
+    public Object contribute(@NonNull Di di) {
 
         Object o;
         try {

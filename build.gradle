@@ -33,6 +33,7 @@ ext {
             'javax-inject'       : 'javax.inject:javax.inject:1',
             'lazy'               : 'ru.noties:lazy:1.1.0',
             'debug'              : 'ru.noties:debug:3.0.0@jar',
+            'lifebus'            : 'ru.noties:lifebus:1.0.1',
             'support-annotations': "com.android.support:support-annotations:$supportVersion",
             'support-fragment'   : "com.android.support:support-fragment:$supportVersion"
     ]

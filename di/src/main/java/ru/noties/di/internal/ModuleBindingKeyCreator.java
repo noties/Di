@@ -28,7 +28,7 @@ abstract class ModuleBindingKeyCreator {
         Key create(@NonNull ModuleBinding binding) {
 
             // let's not forget about lazy and provider
-            // Lazy<Provider<T>>, but not the other way <Provider<Lazy>> (anyway doesn't make much sense)
+            // Lazy<Contributor<T>>, but not the other way <Contributor<Lazy>> (anyway doesn't make much sense)
             //               ^ this one will be hard to achieve with simple TypeToken
             //                 we will have to create own ParametrizedType
 

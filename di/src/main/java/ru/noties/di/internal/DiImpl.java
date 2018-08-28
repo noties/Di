@@ -4,17 +4,20 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import ru.noties.di.Di;
+import ru.noties.di.DiCloseable;
 import ru.noties.di.Key;
 import ru.noties.di.Module;
+import ru.noties.di.Visitor;
 
 // I would rather spend time accumulated from faster build-times on
 // testing. And do it without having to wait until app is building (proper behavior in one run)
-public class DiImpl implements Di {
+public class DiImpl implements Di, DiCloseable {
 
     // todo: maybe provide a way to disable implicit dependencies?
     // todo: simple test module to validate that all dependencies can be satisfied
@@ -26,10 +29,14 @@ public class DiImpl implements Di {
     // todo: maybe make Di abstract and move this one in `internal` package
     // todo: maybe introduce `reflection` option when annotation processor is implemented (if of cause)
     // todo: proguard (https://github.com/zsoltherpai/feather/pull/11/files)
-    // todo: inheritance (of injected objects?)
+    // todo: inheritance (of injected objects?) as an config option maybe?
     // todo: add path to instance specific errors
     // todo: investigate self-container injection... to swap some implementation details?
     // todo: create logger interface & configuration
+    // todo: wildcard reflect type (why not?)
+    // todo: https://stackoverflow.com/questions/6762012/suppress-variable-is-never-assigned-warning-in-intellij-idea#comment34257832_6762287
+    // todo: #close -> should clear explicit dependencies from children also...
+    //      we should not rely on a method invocation in children to clear cached dependencies
 
     @NonNull
     public static DiImpl root(@NonNull String id, Module... modules) {
@@ -56,9 +63,11 @@ public class DiImpl implements Di {
 
     // if explicit dependency is obtained from parent we cannot supply it our context
     //       as parent must not know about children and thus be created inside self
-    private final Map<Key, Provider> explicit;
+    private final Map<Key, Contributor> explicit;
 
-    private final Set<Key> pendingInjections = new HashSet<>(3);
+    private final Set<Key> pendingInjections = Collections.synchronizedSet(new HashSet<Key>(3));
+
+    private volatile boolean isClosed;
 
     DiImpl(
             @NonNull InternalDependencies dependencies,
@@ -68,18 +77,21 @@ public class DiImpl implements Di {
         this.dependencies = dependencies;
         this.parent = parent;
         this.id = id;
-        this.explicit = dependencies.explicitBuilder().build(modules);
+        this.explicit = dependencies.explicitBuilder().build(parent, modules);
     }
 
     @NonNull
     @Override
-    public Di fork(@NonNull String id, Module... modules) {
+    public DiCloseable fork(@NonNull String id, Module... modules) {
         return fork(id, ArrayUtils.toList(modules));
     }
 
     @NonNull
     @Override
-    public Di fork(@NonNull String id, @NonNull Collection<Module> modules) {
+    public DiCloseable fork(@NonNull String id, @NonNull Collection<Module> modules) {
+
+        checkState();
+
         return new DiImpl(
                 dependencies,
                 this,
@@ -89,20 +101,33 @@ public class DiImpl implements Di {
 
     @NonNull
     @Override
-    public Di inject(@NonNull Service who) {
+    public DiCloseable inject(@NonNull Service who) {
+
+        checkState();
+
         dependencies.serviceInjector().inject(this, who);
+
         return this;
     }
 
     @NonNull
     @Override
-    public Di accept(@NonNull Visitor visitor) {
+    public DiCloseable acceptCloseable(@NonNull Visitor<DiCloseable> visitor) {
+        visitor.visit(this);
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public DiCloseable accept(@NonNull Visitor<Di> visitor) {
         visitor.visit(this);
         return this;
     }
 
     @NonNull
     public <T> T get(@NonNull Key key) {
+
+        checkState();
 
         if (pendingInjections.contains(key)) {
             throw DiException.halt("%s, Recursive injection for the key: %s",
@@ -112,27 +137,29 @@ public class DiImpl implements Di {
         pendingInjections.add(key);
         try {
 
-            Provider provider = null;
+            Contributor contributor = null;
 
             DiImpl impl = this;
 
             while (impl != null) {
-                provider = impl.getExplicitProvider(key);
-                if (provider != null) {
+                contributor = impl.getExplicitContributor(key);
+                if (contributor != null) {
                     break;
                 }
                 impl = impl.parent;
             }
 
-            if (provider != null) {
+            if (contributor != null) {
                 //noinspection unchecked
-                return (T) provider.provide(impl);
+                return (T) contributor.contribute(impl);
             }
 
-            provider = dependencies.implicitProviderCreator().create(key);
+            checkState();
+
+            contributor = dependencies.implicitProviderCreator().create(key);
 
             //noinspection unchecked
-            return (T) provider.provide(this);
+            return (T) contributor.contribute(this);
 
         } finally {
             pendingInjections.remove(key);
@@ -140,7 +167,7 @@ public class DiImpl implements Di {
     }
 
     @Nullable
-    private Provider getExplicitProvider(@NonNull Key key) {
+    private Contributor getExplicitContributor(@NonNull Key key) {
         return explicit.get(key);
     }
 
@@ -149,16 +176,19 @@ public class DiImpl implements Di {
 
         final StringBuilder builder = new StringBuilder();
 
-        builder
-                .append('/')
-                .append(id);
+        builder.append('/');
+        if (isClosed) {
+            builder.append("[X]");
+        }
+        builder.append(id);
 
         DiImpl parent = this.parent;
         while (parent != null) {
-            // todo: also closed info here
-            builder
-                    .insert(0, parent.id)
-                    .insert(0, '/');
+            builder.insert(0, parent.id);
+            if (parent.isClosed) {
+                builder.insert(0, "[X]");
+            }
+            builder.insert(0, '/');
             parent = parent.parent;
         }
 
@@ -168,5 +198,39 @@ public class DiImpl implements Di {
     @Override
     public String toString() {
         return "DiImpl(" + path() + ")";
+    }
+
+    @Override
+    public void close() {
+        if (!isClosed) {
+            isClosed = true;
+            explicit.clear();
+        }
+    }
+
+    @Override
+    public boolean isClosed() {
+        return isClosed;
+    }
+
+    private void checkState() {
+
+        boolean isClosed = false;
+
+        DiImpl impl = this;
+
+        // what if we cache called instances and
+
+        while (impl != null) {
+            if (impl.isClosed) {
+                isClosed = true;
+                break;
+            }
+            impl = impl.parent;
+        }
+
+        if (isClosed) {
+            throw DiException.halt("%s: is closed", path());
+        }
     }
 }

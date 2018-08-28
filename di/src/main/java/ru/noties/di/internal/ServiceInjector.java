@@ -33,7 +33,7 @@ abstract class ServiceInjector {
                 try {
                     entry.getKey().set(service, o);
                 } catch (IllegalAccessException e) {
-                    throw DiException.halt("%s: cannot inject %s#%s with " +
+                    throw DiException.halt(e, "%s: cannot inject %s#%s with " +
                             "value: %s", di.path(), service.getClass().getName(), entry.getKey().getName(), o);
                 }
             }

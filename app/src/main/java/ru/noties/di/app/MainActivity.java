@@ -7,37 +7,20 @@ import android.support.v4.app.FragmentManager;
 import android.view.Window;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import ru.noties.debug.Debug;
 import ru.noties.di.Di;
-import ru.noties.di.Provider;
 import ru.noties.di.app.injector.FragmentInjector;
-import ru.noties.lazy.Lazy;
+import ru.noties.lifebus.Lifebus;
+import ru.noties.lifebus.activity.ActivityEvent;
 
 public class MainActivity extends FragmentActivity implements Di.Service {
 
     @Inject
-    private Apple apple;
+    private Lifebus<ActivityEvent> lifebus;
 
     @Inject
-    private Banana banana;
-
-    @Inject
-    private Lazy<Grape> grapeLazy;
-
-    @Inject
-    private Provider<Apple> appleProvider;
-
-    @Inject
-    private Lazy<Provider<Banana>> bananaProviderLazy;
-
-    @Inject
-    private Berry berry;
-
-    @Inject
-    @Named("blue")
-    private Berry namedBerry;
+    private Lifebus<ActivityEvent> lifebus2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,15 +36,18 @@ public class MainActivity extends FragmentActivity implements Di.Service {
 
     @Override
     public void init(@NonNull Di di) {
-        Debug.i("di: %s", di);
-        // maybe allow optional module? with inject?
-        di.fork("MainActivity")
+
+        Debug.i(di);
+
+        final long start = System.nanoTime();
+
+        di.fork("MainActivity", new ActivityLifebusModule(this))
                 .inject(this)
-                .accept(d -> FragmentInjector.init(getSupportFragmentManager(), d));
-        Debug.i(apple, banana, grapeLazy.get());
-        Debug.i(appleProvider);
-        Debug.i(appleProvider.provide());
-        Debug.i(bananaProviderLazy, bananaProviderLazy.get(), bananaProviderLazy.get().provide());
-        Debug.i(berry, namedBerry);
+                .accept(d -> FragmentInjector.init(getSupportFragmentManager(), d))
+                .acceptCloseable(diCloseable -> lifebus.on(ActivityEvent.DESTROY, diCloseable::close));
+
+        final long end = System.nanoTime();
+        Debug.i("took: %d ns, %d ms", (end - start), (end - start) / 1000_000);
+        Debug.i(lifebus, lifebus2);
     }
 }
