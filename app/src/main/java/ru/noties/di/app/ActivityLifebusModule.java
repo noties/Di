@@ -28,5 +28,7 @@ public class ActivityLifebusModule extends Module {
         bind(new TypeToken<Lifebus<ActivityEvent>>() {}.getType())
                 .with(() -> ActivityLifebus.create(application, activity))
                 .asSingleton();
+
+        bind(Activity.class).with(() -> activity).asSingleton();
     }
 }

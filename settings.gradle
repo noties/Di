@@ -1,2 +1,2 @@
 rootProject.name = 'DiProject'
-include ':app', ':di'
+include ':app', ':di', ':di-android'

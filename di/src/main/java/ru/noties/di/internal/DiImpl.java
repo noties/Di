@@ -9,9 +9,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import ru.noties.di.Configuration;
 import ru.noties.di.Di;
 import ru.noties.di.DiCloseable;
 import ru.noties.di.Key;
+import ru.noties.di.Logger;
 import ru.noties.di.Module;
 import ru.noties.di.Visitor;
 
@@ -19,20 +21,10 @@ import ru.noties.di.Visitor;
 // testing. And do it without having to wait until app is building (proper behavior in one run)
 public class DiImpl implements Di, DiCloseable {
 
-    // todo: maybe provide a way to disable implicit dependencies?
-    // todo: simple test module to validate that all dependencies can be satisfied
-    // todo: design so that we can easily introduce annotation processor
-    // todo: maybe introduce `reflection` option when annotation processor is implemented (if of cause)
-    // todo: maybe DiDebug(Di) -> to allow for runtime inspection?
+
     // todo: maybe make Di abstract and move this one in `internal` package
     // todo: proguard (https://github.com/zsoltherpai/feather/pull/11/files)
-    // todo: investigate self-container injection... to swap some implementation details?
-    // todo: create logger interface & configuration
     // todo: https://stackoverflow.com/questions/6762012/suppress-variable-is-never-assigned-warning-in-intellij-idea#comment34257832_6762287
-    // todo: #close -> should clear explicit dependencies from children also...
-    //      we should not rely on a method invocation in children to clear cached dependencies
-    //      as a second thought we could allow it...
-    // todo: should we handle get(Key.of(Di.class)) and immediately return self?
 
     @NonNull
     public static DiImpl root(@NonNull String id, Module... modules) {
@@ -41,21 +33,46 @@ public class DiImpl implements Di, DiCloseable {
 
     @NonNull
     public static DiImpl root(@NonNull String id, @NonNull Collection<Module> modules) {
+        return root(
+                Configuration.builder().build(),
+                id,
+                modules
+        );
+    }
+
+    @NonNull
+    public static DiImpl root(
+            @NonNull Configuration configuration,
+            @NonNull String id,
+            Module... modules) {
+        return root(
+                configuration,
+                id,
+                ArrayUtils.toList(modules)
+        );
+    }
+
+    @NonNull
+    public static DiImpl root(
+            @NonNull Configuration configuration,
+            @NonNull String id,
+            @NonNull Collection<Module> modules) {
         return new DiImpl(
-                InternalDependencies.create(false),
+                InternalDependencies.create(configuration.allowInheritance()),
                 null,
                 id,
                 CollectionUtils.requireNoNulls(
                         "Cannot add `null` as a module",
                         modules
-                ));
+                ),
+                configuration);
     }
-
-    // this#dispose/close/exit
 
     private final InternalDependencies dependencies;
     private final DiImpl parent;
     private final String id;
+    private final Configuration configuration;
+    private final Logger logger;
 
     // if explicit dependency is obtained from parent we cannot supply it our context
     //       as parent must not know about children and thus be created inside self
@@ -69,10 +86,13 @@ public class DiImpl implements Di, DiCloseable {
             @NonNull InternalDependencies dependencies,
             @Nullable DiImpl parent,
             @NonNull String id,
-            @NonNull Collection<Module> modules) {
+            @NonNull Collection<Module> modules,
+            @NonNull Configuration configuration) {
         this.dependencies = dependencies;
         this.parent = parent;
         this.id = id;
+        this.configuration = configuration;
+        this.logger = configuration.logger();
         this.explicit = dependencies.explicitBuilder().build(parent, modules);
     }
 
@@ -86,18 +106,28 @@ public class DiImpl implements Di, DiCloseable {
     @Override
     public DiCloseable fork(@NonNull String id, @NonNull Collection<Module> modules) {
 
+        // log: forking ${path()} -> ${path() + id}, modules: $modules
+        if (logger.canLog()) {
+            logger.log("di-fork", "Forking %1$s -> %1$s/%2$s, modules: %3$s", path(), id, modules);
+        }
+
         checkState();
 
         return new DiImpl(
                 dependencies,
                 this,
                 id,
-                CollectionUtils.requireNoNulls("Cannot add `null` as a module", modules));
+                CollectionUtils.requireNoNulls("Cannot add `null` as a module", modules),
+                configuration);
     }
 
     @NonNull
     @Override
     public DiCloseable inject(@NonNull Service who) {
+
+        if (logger.canLog()) {
+            logger.log("di-inject", "Injecting service `%s` with %s", who, path());
+        }
 
         checkState();
 
@@ -146,11 +176,27 @@ public class DiImpl implements Di, DiCloseable {
             }
 
             if (contributor != null) {
+
+                if (logger.canLog()) {
+                    logger.log("di-get-explicit", "Obtained explicit binding `%s` " +
+                            "from: %s, this: %s", key, impl.path(), path());
+                }
+
                 //noinspection unchecked
                 return (T) contributor.contribute(impl);
             }
 
+            if (logger.canLog()) {
+                logger.log("di-get-implicit", "Obtaining implicit binding `%s` " +
+                        "from: %s", key, path());
+            }
+
             checkState();
+
+            if (configuration.disableImplicitDependencies()) {
+                throw DiException.halt("Implicit dependencies are disabled, key: %s, " +
+                        "this: %s", key, path());
+            }
 
             contributor = dependencies.implicitProviderCreator().create(key);
 
@@ -198,6 +244,11 @@ public class DiImpl implements Di, DiCloseable {
 
     @Override
     public void close() {
+
+        if (logger.canLog()) {
+            logger.log("di-close", "Closing %s", path());
+        }
+
         if (!isClosed) {
             isClosed = true;
             explicit.clear();

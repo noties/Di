@@ -17,6 +17,7 @@ dependencies {
 
     deps['test'].with {
         testImplementation it['junit']
+        testImplementation it['mockito']
     }
 }
 

@@ -10,7 +10,7 @@ import javax.inject.Inject;
 
 import ru.noties.debug.Debug;
 import ru.noties.di.Di;
-import ru.noties.di.app.injector.FragmentInjector;
+import ru.noties.di.android.FragmentInjector;
 import ru.noties.lifebus.Lifebus;
 import ru.noties.lifebus.activity.ActivityEvent;
 
@@ -43,7 +43,7 @@ public class MainActivity extends FragmentActivity implements Di.Service {
 
         di.fork("MainActivity", new ActivityLifebusModule(this))
                 .inject(this)
-                .accept(d -> FragmentInjector.init(getSupportFragmentManager(), d))
+                .accept(FragmentInjector.init(getSupportFragmentManager()))
                 .acceptCloseable(diCloseable -> lifebus.on(ActivityEvent.DESTROY, diCloseable::close));
 
         final long end = System.nanoTime();

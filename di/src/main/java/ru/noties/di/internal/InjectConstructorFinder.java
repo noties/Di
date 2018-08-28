@@ -3,6 +3,7 @@ package ru.noties.di.internal;
 import android.support.annotation.NonNull;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +44,8 @@ abstract class InjectConstructorFinder {
         @NonNull
         private Constructor obtain(@NonNull Class cl) {
 
+            validateConcreteClass(cl);
+
             // it is required to annotate ONE constructor with @Inject (to make it explicit)
             //  but exactly one (object can have other constructors
 
@@ -54,17 +57,17 @@ abstract class InjectConstructorFinder {
                 if (constructor.getAnnotation(Inject.class) != null) {
 
                     if (injectedConstructor != null) {
-                        throw DiException.halt("Cannot create implicit dependency, type: " +
-                                        "%s has multiple constructors annotated with @Inject annotation",
-                                cl.getName());
+                        // Multiple constructors with @Inject annotation, type: %s
+                        throw DiException.halt("Multiple constructors with @Inject annotation, " +
+                                "type: %s", cl.getName());
                     }
 
                     final Type[] parameters = constructor.getParameterTypes();
                     if (parameters != null
                             && parameters.length > 0) {
-                        throw DiException.halt("Cannot create implicit dependency, type: " +
-                                        "%s has no empty constructor annotated with @Inject annotation",
-                                cl.getName());
+                        // Constructor with @Inject annotation is not empty (has parameters)
+                        throw DiException.halt("Constructor with @Inject annotation is " +
+                                "not empty (has parameters), type: %s", cl.getName());
                     }
 
                     injectedConstructor = constructor;
@@ -72,13 +75,60 @@ abstract class InjectConstructorFinder {
             }
 
             if (injectedConstructor == null) {
-                throw DiException.halt("Cannot create implicit dependency, type: %s " +
-                        "has no empty constructors annotated with @Inject annotation", cl.getName());
+                // No empty constructor with @Inject annotation found, type: %s
+                throw DiException.halt("No empty constructor with @Inject annotation found, " +
+                        "type: %s", cl.getName());
             }
 
             injectedConstructor.setAccessible(true);
 
             return injectedConstructor;
+        }
+
+        private static void validateConcreteClass(@NonNull Class cl) {
+
+            //  * !isAnnotation
+            //  * !isAnonymousClass
+            //  * !isArray
+            //  * !isEnum
+            //  * !isInterface
+            //  * !isLocalClass
+            //  * !Modifiers.isAbstract()
+            //  * isMemberClass ? Modifiers.isStatic() : false
+            //  * !isPrimitive
+            //  * !isSynthetic
+
+            final String reason;
+
+            if (cl.isAnnotation()) {
+                reason = "annotation";
+            } else if (cl.isAnonymousClass()) {
+                reason = "anonymous class";
+            } else if (cl.isArray()) {
+                reason = "array";
+            } else if (cl.isEnum()) {
+                reason = "enum";
+            } else if (cl.isInterface()) {
+                reason = "interface";
+            } else if (cl.isLocalClass()) {
+                reason = "local class";
+            } else if (cl.isPrimitive()) {
+                // move primitive before abstract check as int.class for example is abstract
+                reason = "primitive";
+            } else if (Modifier.isAbstract(cl.getModifiers())) {
+                reason = "abstract class";
+            } else if (cl.isMemberClass() && !Modifier.isStatic(cl.getModifiers())) {
+                reason = "non-static member class";
+            } else if (cl.isSynthetic()) {
+                reason = "synthetic class";
+            } else {
+                reason = null;
+            }
+
+            if (reason != null) {
+                throw DiException.halt("Provided type cannot be instantiated, reason: %s, " +
+                        "cl: %s(%s)", reason, cl.getName(), cl);
+            }
         }
     }
 }

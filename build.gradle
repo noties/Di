@@ -39,6 +39,7 @@ ext {
     ]
 
     deps['test'] = [
-            'junit': 'junit:junit:4.12'
+            'junit'  : 'junit:junit:4.12',
+            'mockito': 'org.mockito:mockito-core:2.21.0'
     ]
 }
