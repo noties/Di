@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import javax.inject.Inject;
 
-import ru.noties.debug.Debug;
 import ru.noties.di.Di;
 import ru.noties.di.android.FragmentInjector;
 import ru.noties.lifebus.Lifebus;
@@ -25,11 +24,10 @@ public class MainFragment extends Fragment implements Di.Service {
 
     @Override
     public void init(@NonNull Di di) {
-        Debug.i("di: %s", di);
         di.fork("MainFragment", new FragmentLifebusModule(this))
                 .inject(this)
                 .accept(FragmentInjector.init(getChildFragmentManager()))
-                .acceptCloseable(diCloseable -> lifebus.on(FragmentEvent.DETACH, diCloseable::close));
+                .accept(LifebusDi.closeOn(lifebus, FragmentEvent.DETACH));
     }
 
     @Nullable

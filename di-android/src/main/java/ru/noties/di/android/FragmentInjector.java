@@ -6,13 +6,12 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 
 import ru.noties.di.Di;
-import ru.noties.di.Visitor;
 
 public abstract class FragmentInjector {
 
     @NonNull
-    public static Visitor<Di> init(@NonNull final FragmentManager manager) {
-        return new Visitor<Di>() {
+    public static Di.Visitor init(@NonNull final FragmentManager manager) {
+        return new Di.Visitor() {
             @Override
             public void visit(@NonNull final Di di) {
 

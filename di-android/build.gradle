@@ -10,6 +10,7 @@ android {
         targetSdkVersion config['target-sdk']
         versionCode 1
         versionName version
+        consumerProguardFiles 'di-proguard.pro'
     }
 }
 

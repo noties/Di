@@ -15,7 +15,6 @@ public class AppModule extends Module {
 
     @Override
     public void configure() {
-
         bind(Application.class).with(() -> app).asSingleton();
     }
 }

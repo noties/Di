@@ -16,7 +16,7 @@ public abstract class AndroidLogger extends Logger {
                 : Logger.noOp();
     }
 
-    static class Impl extends AndroidLogger {
+    protected static class Impl extends AndroidLogger {
 
         private static final String PACKAGE = "ru.noties.di.";
 
@@ -36,7 +36,7 @@ public abstract class AndroidLogger extends Logger {
         }
 
         @NonNull
-        private static String tag() {
+        protected String tag() {
 
             // here we must find first non-library call
 

@@ -2,28 +2,30 @@ package ru.noties.di.internal;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import ru.noties.di.Configuration;
 import ru.noties.di.Di;
-import ru.noties.di.DiCloseable;
 import ru.noties.di.Key;
 import ru.noties.di.Logger;
 import ru.noties.di.Module;
-import ru.noties.di.Visitor;
 
 // I would rather spend time accumulated from faster build-times on
 // testing. And do it without having to wait until app is building (proper behavior in one run)
-public class DiImpl implements Di, DiCloseable {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class DiImpl extends Di {
 
-
-    // todo: maybe make Di abstract and move this one in `internal` package
-    // todo: proguard (https://github.com/zsoltherpai/feather/pull/11/files)
+    // todo: additional android module that will test with proguard enabled
+    //      do not forget to put it into different package of `ru.noties.di.` as it
+    //      has a proguard rule
     // todo: https://stackoverflow.com/questions/6762012/suppress-variable-is-never-assigned-warning-in-intellij-idea#comment34257832_6762287
 
     @NonNull
@@ -82,6 +84,8 @@ public class DiImpl implements Di, DiCloseable {
 
     private volatile boolean isClosed;
 
+    private final List<Di> children = Collections.synchronizedList(new ArrayList<Di>(3));
+
     DiImpl(
             @NonNull InternalDependencies dependencies,
             @Nullable DiImpl parent,
@@ -98,13 +102,13 @@ public class DiImpl implements Di, DiCloseable {
 
     @NonNull
     @Override
-    public DiCloseable fork(@NonNull String id, Module... modules) {
+    public Di fork(@NonNull String id, Module... modules) {
         return fork(id, ArrayUtils.toList(modules));
     }
 
     @NonNull
     @Override
-    public DiCloseable fork(@NonNull String id, @NonNull Collection<Module> modules) {
+    public Di fork(@NonNull String id, @NonNull Collection<Module> modules) {
 
         // log: forking ${path()} -> ${path() + id}, modules: $modules
         if (logger.canLog()) {
@@ -113,17 +117,22 @@ public class DiImpl implements Di, DiCloseable {
 
         checkState();
 
-        return new DiImpl(
+        final DiImpl impl = new DiImpl(
                 dependencies,
                 this,
                 id,
                 CollectionUtils.requireNoNulls("Cannot add `null` as a module", modules),
                 configuration);
+
+        // record child instance for later closing
+        children.add(impl);
+
+        return impl;
     }
 
     @NonNull
     @Override
-    public DiCloseable inject(@NonNull Service who) {
+    public Di inject(@NonNull Service who) {
 
         if (logger.canLog()) {
             logger.log("di-inject", "Injecting service `%s` with %s", who, path());
@@ -138,14 +147,7 @@ public class DiImpl implements Di, DiCloseable {
 
     @NonNull
     @Override
-    public DiCloseable acceptCloseable(@NonNull Visitor<DiCloseable> visitor) {
-        visitor.visit(this);
-        return this;
-    }
-
-    @NonNull
-    @Override
-    public DiCloseable accept(@NonNull Visitor<Di> visitor) {
+    public Di accept(@NonNull Visitor visitor) {
         visitor.visit(this);
         return this;
     }
@@ -245,13 +247,29 @@ public class DiImpl implements Di, DiCloseable {
     @Override
     public void close() {
 
-        if (logger.canLog()) {
-            logger.log("di-close", "Closing %s", path());
-        }
-
         if (!isClosed) {
-            isClosed = true;
-            explicit.clear();
+
+            synchronized (children) {
+
+                if (!isClosed) {
+
+                    // we no longer need to reference them
+                    for (Di child : children) {
+                        if (!child.isClosed()) {
+                            child.close();
+                        }
+                    }
+                    children.clear();
+
+                    isClosed = true;
+
+                    if (logger.canLog()) {
+                        logger.log("di-close", "Closing %s", path());
+                    }
+
+                    explicit.clear();
+                }
+            }
         }
     }
 
@@ -261,21 +279,6 @@ public class DiImpl implements Di, DiCloseable {
     }
 
     private void checkState() {
-
-        boolean isClosed = false;
-
-        DiImpl impl = this;
-
-        // what if we cache called instances and
-
-        while (impl != null) {
-            if (impl.isClosed) {
-                isClosed = true;
-                break;
-            }
-            impl = impl.parent;
-        }
-
         if (isClosed) {
             throw DiException.halt("%s: is closed", path());
         }

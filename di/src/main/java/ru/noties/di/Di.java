@@ -4,34 +4,75 @@ import android.support.annotation.NonNull;
 
 import java.util.Collection;
 
-public interface Di {
+import ru.noties.di.internal.DiImpl;
 
-    @NonNull
-    DiCloseable fork(@NonNull String id, Module... modules);
-
-    @NonNull
-    DiCloseable fork(@NonNull String id, @NonNull Collection<Module> modules);
+public abstract class Di {
 
 
-    interface Service {
+    public interface Service {
         void init(@NonNull Di di);
     }
 
-    @NonNull
-    Di inject(@NonNull Service who);
-
-    interface Contributor {
+    public interface Contributor {
         @NonNull
         Object contribute(@NonNull Di di);
     }
 
-    @NonNull
-    <T> T get(@NonNull Key key);
+    public interface Visitor {
+        void visit(@NonNull Di di);
+    }
+
 
     @NonNull
-    String path();
+    public static Di root(@NonNull String id, Module... modules) {
+        return DiImpl.root(id, modules);
+    }
+
+    @NonNull
+    public static Di root(@NonNull String id, @NonNull Collection<Module> modules) {
+        return DiImpl.root(id, modules);
+    }
+
+    @NonNull
+    public static Di root(
+            @NonNull Configuration configuration,
+            @NonNull String id,
+            Module... modules) {
+        return DiImpl.root(configuration, id, modules);
+    }
+
+    @NonNull
+    public static Di root(
+            @NonNull Configuration configuration,
+            @NonNull String id,
+            @NonNull Collection<Module> modules) {
+        return DiImpl.root(
+                configuration,
+                id,
+                modules
+        );
+    }
+
+    @NonNull
+    public abstract Di fork(@NonNull String id, Module... modules);
+
+    @NonNull
+    public abstract Di fork(@NonNull String id, @NonNull Collection<Module> modules);
+
+    public abstract void close();
+
+    public abstract boolean isClosed();
+
+    @NonNull
+    public abstract Di inject(@NonNull Service who);
+
+    @NonNull
+    public abstract <T> T get(@NonNull Key key);
+
+    @NonNull
+    public abstract String path();
 
     @SuppressWarnings("UnusedReturnValue")
     @NonNull
-    Di accept(@NonNull Visitor<Di> visitor);
+    public abstract Di accept(@NonNull Visitor visitor);
 }

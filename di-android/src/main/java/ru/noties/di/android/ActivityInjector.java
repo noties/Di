@@ -6,13 +6,12 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import ru.noties.di.Di;
-import ru.noties.di.Visitor;
 
 public abstract class ActivityInjector {
 
     @NonNull
-    public static Visitor<Di> init(@NonNull final Application application) {
-        return new Visitor<Di>() {
+    public static Di.Visitor init(@NonNull final Application application) {
+        return new Di.Visitor() {
             @Override
             public void visit(@NonNull final Di di) {
                 application.registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacksAdapter() {
