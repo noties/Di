@@ -4,6 +4,8 @@ import android.support.annotation.NonNull;
 
 import java.util.Collection;
 
+import ru.noties.di.DiException;
+
 abstract class CollectionUtils {
 
     @NonNull

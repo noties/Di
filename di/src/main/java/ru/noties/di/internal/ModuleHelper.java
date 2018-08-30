@@ -2,26 +2,42 @@ package ru.noties.di.internal;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import ru.noties.di.ModuleBindingBuilder;
+import ru.noties.di.Di;
+import ru.noties.di.DiException;
+import ru.noties.di.Key;
 import ru.noties.di.ModuleBinding;
+import ru.noties.di.ModuleBindingBuilder;
 import ru.noties.di.Provider;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class ModuleHelper {
 
     @NonNull
     public abstract List<ModuleBinding> bindings();
+
+    public abstract void init(@Nullable Di di);
 
     @NonNull
     public abstract <T> ModuleBindingBuilder.Typed<T> bind(@NonNull Class<T> type);
 
     @NonNull
     public abstract ModuleBindingBuilder.Raw bind(@NonNull Type type);
+
+    @NonNull
+    public abstract <T> T require(@NonNull Class<T> type);
+
+    @NonNull
+    public abstract <T> T require(@NonNull Type type);
+
+    @NonNull
+    public abstract <T> T require(@NonNull Key key);
 
 
     @NonNull
@@ -32,6 +48,13 @@ public abstract class ModuleHelper {
     static class Impl extends ModuleHelper {
 
         private final List<ModuleBinding> bindings = new ArrayList<>(3);
+
+        private Di di;
+
+        @Override
+        public void init(@Nullable Di di) {
+            this.di = di;
+        }
 
         @NonNull
         @Override
@@ -55,7 +78,32 @@ public abstract class ModuleHelper {
             return new ModuleBindingBuilderImpl(binding);
         }
 
-        private static class ModuleBindingBuilderImpl implements ModuleBindingBuilder, ModuleBindingBuilder.Raw, ModuleBindingBuilder.QualifiersOrModifiers {
+        @NonNull
+        @Override
+        public <T> T require(@NonNull Class<T> type) {
+            return require(Key.of(type));
+        }
+
+        @NonNull
+        @Override
+        public <T> T require(@NonNull Type type) {
+            return require(Key.of(type));
+        }
+
+        @NonNull
+        @Override
+        public <T> T require(@NonNull Key key) {
+            if (di != null) {
+                return di.get(key);
+            }
+            throw DiException.halt("Calling #require when configuring module for " +
+                    "the root Di instance");
+        }
+
+        private static class ModuleBindingBuilderImpl implements
+                ModuleBindingBuilder,
+                ModuleBindingBuilder.Raw,
+                ModuleBindingBuilder.QualifiersOrModifiers {
 
             final ModuleBindingImpl binding;
 
@@ -113,7 +161,8 @@ public abstract class ModuleHelper {
             }
         }
 
-        private static class ModuleBindingBuilderTypedImpl<T> extends ModuleBindingBuilderImpl implements ModuleBindingBuilder.Typed<T> {
+        private static class ModuleBindingBuilderTypedImpl<T> extends ModuleBindingBuilderImpl implements
+                ModuleBindingBuilder.Typed<T> {
 
             private ModuleBindingBuilderTypedImpl(@NonNull ModuleBindingImpl binding) {
                 super(binding);

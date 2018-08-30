@@ -2,24 +2,32 @@ package ru.noties.di;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.lang.reflect.Type;
 import java.util.List;
 
-import ru.noties.di.internal.DiException;
 import ru.noties.di.internal.ModuleHelper;
 
 public abstract class Module {
 
+
     public abstract void configure();
 
 
-    private final ModuleHelper moduleHelper = ModuleHelper.create();
+    private final ModuleHelper moduleHelper;
 
-    private Di di;
+    public Module() {
+        this(ModuleHelper.create());
+    }
+
+    @VisibleForTesting
+    Module(@NonNull ModuleHelper moduleHelper) {
+        this.moduleHelper = moduleHelper;
+    }
 
     public void init(@Nullable Di di) {
-        this.di = di;
+        moduleHelper.init(di);
     }
 
     @NonNull
@@ -39,19 +47,16 @@ public abstract class Module {
 
     @NonNull
     protected <T> T require(@NonNull Class<T> type) {
-        return require(Key.of(type));
+        return moduleHelper.require(type);
     }
 
     @NonNull
     protected <T> T require(@NonNull Type type) {
-        return require(Key.of(type));
+        return moduleHelper.require(type);
     }
 
     @NonNull
     protected <T> T require(@NonNull Key key) {
-        if (di != null) {
-            return di.get(key);
-        }
-        throw DiException.halt("Calling #require on the root Di instance");
+        return moduleHelper.require(key);
     }
 }

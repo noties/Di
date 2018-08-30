@@ -1,8 +1,8 @@
 package ru.noties.di.internal;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
 public class Reflect {
@@ -14,20 +14,21 @@ public class Reflect {
     }
 
     @NonNull
-    public Field field(@NonNull String name) {
+    public Constructor constructor(Class... parameters) {
         try {
-            return cl.getDeclaredField(name);
+            //noinspection unchecked
+            return cl.getDeclaredConstructor(parameters);
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
     }
 
-    @Nullable
-    public Field fieldOptional(@NonNull String name) {
+    @NonNull
+    public Field field(@NonNull String name) {
         try {
             return cl.getDeclaredField(name);
         } catch (Throwable t) {
-            return null;
+            throw new RuntimeException(t);
         }
     }
 }

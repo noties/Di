@@ -33,7 +33,7 @@ abstract class InternalDependencies {
 
             this.explicitBuilder = ExplicitBuilder.create(
                     ModuleMerger.create(ModuleBindingKeyCreator.create()),
-                    ModuleBindingProviderCreator.create(injectConstructorFinder, dependenciesDeclarationsCreator));
+                    ModuleBindingContributorCreator.create(injectConstructorFinder, dependenciesDeclarationsCreator));
 
             this.implicitProviderCreator = ImplicitProviderCreator.create(
                     ImplicitKeyValidator.create(),

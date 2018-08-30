@@ -5,24 +5,24 @@ import android.support.annotation.NonNull;
 import java.lang.reflect.Type;
 
 import ru.noties.di.Di;
-import ru.noties.di.Key;
+import ru.noties.di.DiException;
 import ru.noties.di.ModuleBinding;
 import ru.noties.di.Provider;
 import ru.noties.lazy.Lazy;
 
-abstract class ModuleBindingProviderCreator {
+abstract class ModuleBindingContributorCreator {
 
     @NonNull
-    abstract Di.Contributor create(@NonNull Key key, @NonNull ModuleBinding binding);
+    abstract Di.Contributor create(@NonNull ModuleBinding binding);
 
     @NonNull
-    static ModuleBindingProviderCreator create(
+    static ModuleBindingContributorCreator create(
             @NonNull InjectConstructorFinder injectConstructorFinder,
             @NonNull DependenciesDeclarationsCreator dependenciesDeclarationsCreator) {
         return new Impl(injectConstructorFinder, dependenciesDeclarationsCreator);
     }
 
-    static class Impl extends ModuleBindingProviderCreator {
+    static class Impl extends ModuleBindingContributorCreator {
 
         private final InjectConstructorFinder injectConstructorFinder;
         private final DependenciesDeclarationsCreator dependenciesDeclarationsCreator;
@@ -36,7 +36,7 @@ abstract class ModuleBindingProviderCreator {
 
         @NonNull
         @Override
-        Di.Contributor create(@NonNull Key key, @NonNull ModuleBinding binding) {
+        Di.Contributor create(@NonNull ModuleBinding binding) {
 
             // originType OR provider
             //  let's create an abstraction and make origin type through provider also
@@ -73,13 +73,7 @@ abstract class ModuleBindingProviderCreator {
                         dependenciesDeclarationsCreator.create(cl)
                 );
             } else {
-                contributor = new Di.Contributor() {
-                    @NonNull
-                    @Override
-                    public Object contribute(@NonNull Di di) {
-                        return provider.provide();
-                    }
-                };
+                contributor = new ProviderBridgeContributor(provider);
             }
 
             if (binding.isProvider()) {
@@ -97,12 +91,34 @@ abstract class ModuleBindingProviderCreator {
             return contributor;
         }
 
-        private static class ProviderContributor implements Di.Contributor {
+        static class ProviderBridgeContributor implements Di.Contributor {
 
-            private final Di.Contributor parent;
+            private final Provider provider;
+
+            ProviderBridgeContributor(@NonNull Provider provider) {
+                this.provider = provider;
+            }
+
+            @NonNull
+            @Override
+            public Object contribute(@NonNull Di di) {
+                return provider.provide();
+            }
+        }
+
+        static abstract class BaseContributor implements Di.Contributor {
+
+            final Di.Contributor parent;
+
+            BaseContributor(@NonNull Di.Contributor parent) {
+                this.parent = parent;
+            }
+        }
+
+        static class ProviderContributor extends BaseContributor {
 
             ProviderContributor(@NonNull Di.Contributor parent) {
-                this.parent = parent;
+                super(parent);
             }
 
             @NonNull
@@ -118,12 +134,10 @@ abstract class ModuleBindingProviderCreator {
             }
         }
 
-        private static class LazyContributor implements Di.Contributor {
-
-            private final Di.Contributor parent;
+        static class LazyContributor extends BaseContributor {
 
             LazyContributor(@NonNull Di.Contributor parent) {
-                this.parent = parent;
+                super(parent);
             }
 
             @NonNull
@@ -139,14 +153,13 @@ abstract class ModuleBindingProviderCreator {
             }
         }
 
-        private static class SingletonContributor implements Di.Contributor {
+        static class SingletonContributor extends BaseContributor {
 
-            private final Di.Contributor parent;
             private final Object lock = new Object();
             private Object value;
 
             SingletonContributor(@NonNull Di.Contributor parent) {
-                this.parent = parent;
+                super(parent);
             }
 
             @NonNull

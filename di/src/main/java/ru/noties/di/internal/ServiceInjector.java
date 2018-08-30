@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import ru.noties.di.Di;
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
 
 abstract class ServiceInjector {
@@ -32,8 +33,8 @@ abstract class ServiceInjector {
                 final Object o = di.get(entry.getValue());
                 try {
                     entry.getKey().set(service, o);
-                } catch (IllegalAccessException e) {
-                    throw DiException.halt(e, "%s: cannot inject %s#%s with " +
+                } catch (Throwable t) {
+                    throw DiException.halt(t, "%s: cannot inject %s#%s with " +
                             "value: %s", di.path(), service.getClass().getName(), entry.getKey().getName(), o);
                 }
             }

@@ -36,6 +36,11 @@ abstract class ModuleBindingKeyCreator {
 
             Type type = binding.bindType();
 
+            // todo: this might seem to be a bit weird
+            //  we do not check additionally if type is already lazy/provider
+            //  but we assume that users won't use TypeToken functionality instead
+            //  of a simple `asLazy` call
+
             if (binding.isProvider()) {
                 type = new ParameterizedTypeImpl(Provider.class, null, type);
             }

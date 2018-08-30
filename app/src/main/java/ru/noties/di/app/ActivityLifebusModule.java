@@ -23,9 +23,13 @@ public class ActivityLifebusModule extends Module {
 
         // strictly speaking we do not need it here, but we could
         //  access parent dependencies like this
+        // please note that will `require` a dependency from PARENT Di
+        // if it's called when defining module for a root Di, then this one
+        // will throw
         final Application application = require(Application.class);
 
-        bind(new TypeToken<Lifebus<ActivityEvent>>() {}.getType())
+        bind(new TypeToken<Lifebus<ActivityEvent>>() {
+        }.getType())
                 .with(() -> ActivityLifebus.create(application, activity))
                 .asSingleton();
 

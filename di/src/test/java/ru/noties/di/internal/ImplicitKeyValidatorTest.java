@@ -12,7 +12,9 @@ import java.util.List;
 
 import javax.inject.Named;
 
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
+import ru.noties.di.internal.ImplicitKeyValidator.Impl;
 import ru.noties.di.reflect.GenericArrayTypeImpl;
 import ru.noties.di.reflect.ParameterizedTypeImpl;
 import ru.noties.di.reflect.WildcardTypeImpl;
@@ -21,11 +23,11 @@ import static org.junit.Assert.assertTrue;
 
 public class ImplicitKeyValidatorTest {
 
-    private ImplicitKeyValidator.Impl impl;
+    private Impl impl;
 
     @Before
     public void before() {
-        impl = new ImplicitKeyValidator.Impl();
+        impl = new Impl();
     }
 
     @Retention(RetentionPolicy.RUNTIME)

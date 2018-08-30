@@ -11,7 +11,9 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Qualifier;
 
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
+import ru.noties.di.internal.KeyCreator.Impl;
 import ru.noties.di.reflect.TypeToken;
 
 import static org.junit.Assert.assertEquals;
@@ -21,12 +23,12 @@ import static org.junit.Assert.assertTrue;
 
 public class KeyCreatorTest {
 
-    private KeyCreator.Impl impl;
+    private Impl impl;
     private Reflect reflect;
 
     @Before
     public void before() {
-        impl = new KeyCreator.Impl();
+        impl = new Impl();
         reflect = new Reflect(T.class);
     }
 
@@ -105,5 +107,39 @@ public class KeyCreatorTest {
         assertTrue(key instanceof Key.Qualified);
         assertEquals(MyQual.class, ((Key.Qualified) key).qualifier());
         assertEquals(T.class, key.type());
+    }
+
+    private static class StaticFields {
+
+        @Inject
+        static String s;
+    }
+
+    @Test
+    public void static_fields() {
+        final Reflect reflect = new Reflect(StaticFields.class);
+        try {
+            impl.createKey(reflect.field("s"));
+            assertTrue(false);
+        } catch (DiException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("Cannot inject static field"));
+        }
+    }
+
+    private static class FinalFields {
+
+        @Inject
+        private final String s = null;
+    }
+
+    @Test
+    public void final_fields() {
+        final Reflect reflect = new Reflect(FinalFields.class);
+        try {
+            impl.createKey(reflect.field("s"));
+            assertTrue(false);
+        } catch (DiException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("Cannot inject final field"));
+        }
     }
 }

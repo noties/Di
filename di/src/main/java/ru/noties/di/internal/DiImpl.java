@@ -14,6 +14,7 @@ import java.util.Set;
 
 import ru.noties.di.Configuration;
 import ru.noties.di.Di;
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
 import ru.noties.di.Logger;
 import ru.noties.di.Module;
@@ -23,6 +24,8 @@ import ru.noties.di.Module;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DiImpl extends Di {
 
+    // todo: we are setting isClosed flag after closing children.. should we do anything about it?
+    // todo: move diexception to public
     // todo: additional android module that will test with proguard enabled
     //      do not forget to put it into different package of `ru.noties.di.` as it
     //      has a proguard rule

@@ -20,20 +20,20 @@ abstract class ExplicitBuilder {
     @NonNull
     static ExplicitBuilder create(
             @NonNull ModuleMerger moduleMerger,
-            @NonNull ModuleBindingProviderCreator moduleBindingProviderCreator) {
-        return new Impl(moduleMerger, moduleBindingProviderCreator);
+            @NonNull ModuleBindingContributorCreator moduleBindingContributorCreator) {
+        return new Impl(moduleMerger, moduleBindingContributorCreator);
     }
 
     static class Impl extends ExplicitBuilder {
 
         private final ModuleMerger moduleMerger;
-        private final ModuleBindingProviderCreator moduleBindingProviderCreator;
+        private final ModuleBindingContributorCreator moduleBindingContributorCreator;
 
         Impl(
                 @NonNull ModuleMerger moduleMerger,
-                @NonNull ModuleBindingProviderCreator moduleBindingProviderCreator) {
+                @NonNull ModuleBindingContributorCreator moduleBindingContributorCreator) {
             this.moduleMerger = moduleMerger;
-            this.moduleBindingProviderCreator = moduleBindingProviderCreator;
+            this.moduleBindingContributorCreator = moduleBindingContributorCreator;
         }
 
         @NonNull
@@ -47,7 +47,7 @@ abstract class ExplicitBuilder {
             if (modules.size() > 0) {
                 final Map<Key, ModuleBinding> bindings = moduleMerger.merge(parent, modules);
                 for (Map.Entry<Key, ModuleBinding> entry : bindings.entrySet()) {
-                    map.put(entry.getKey(), moduleBindingProviderCreator.create(entry.getKey(), entry.getValue()));
+                    map.put(entry.getKey(), moduleBindingContributorCreator.create(entry.getValue()));
                 }
             }
 

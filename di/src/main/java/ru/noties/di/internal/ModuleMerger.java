@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ru.noties.di.Di;
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
 import ru.noties.di.Module;
 import ru.noties.di.ModuleBinding;

@@ -10,6 +10,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import ru.noties.di.DiException;
+
 abstract class InjectConstructorFinder {
 
     @NonNull

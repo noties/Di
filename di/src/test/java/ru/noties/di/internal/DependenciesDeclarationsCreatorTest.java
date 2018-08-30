@@ -17,6 +17,8 @@ import javax.inject.Named;
 import javax.inject.Qualifier;
 
 import ru.noties.di.Key;
+import ru.noties.di.internal.DependenciesDeclarationsCreator.Impl;
+import ru.noties.di.internal.DependenciesDeclarationsCreator.InheritanceImpl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,13 +26,13 @@ import static ru.noties.di.internal.TestUtils.with;
 
 public class DependenciesDeclarationsCreatorTest {
 
-    private DependenciesDeclarationsCreator.Impl impl;
-    private DependenciesDeclarationsCreator.InheritanceImpl inheritanceImpl;
+    private Impl impl;
+    private InheritanceImpl inheritanceImpl;
 
     @Before
     public void before() {
-        impl = new DependenciesDeclarationsCreator.Impl(new KeyCreator.Impl());
-        inheritanceImpl = new DependenciesDeclarationsCreator.InheritanceImpl(new KeyCreator.Impl());
+        impl = new Impl(new KeyCreator.Impl());
+        inheritanceImpl = new InheritanceImpl(new KeyCreator.Impl());
     }
 
     @Qualifier

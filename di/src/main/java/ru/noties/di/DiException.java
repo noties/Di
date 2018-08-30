@@ -1,10 +1,8 @@
-package ru.noties.di.internal;
+package ru.noties.di;
 
 import android.support.annotation.NonNull;
 
 import java.util.Locale;
-
-import ru.noties.di.BuildConfig;
 
 public class DiException extends RuntimeException {
 

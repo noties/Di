@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import ru.noties.di.Di;
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
 import ru.noties.di.OnInjected;
 

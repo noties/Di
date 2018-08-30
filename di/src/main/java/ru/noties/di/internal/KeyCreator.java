@@ -5,12 +5,14 @@ import android.support.annotation.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Qualifier;
 
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
 
 abstract class KeyCreator {
@@ -31,6 +33,15 @@ abstract class KeyCreator {
 
             if (field.getAnnotation(Inject.class) == null) {
                 return null;
+            }
+
+            final int modifiers = field.getModifiers();
+            if (Modifier.isStatic(modifiers)) {
+                throw DiException.halt("Cannot inject static field: %s#$s",
+                        field.getDeclaringClass().getName(), field.getName());
+            } else if (Modifier.isFinal(modifiers)) {
+                throw DiException.halt("Cannot inject final field: %s#%s",
+                        field.getDeclaringClass().getName(), field.getName());
             }
 
             final Type genericType = field.getGenericType();

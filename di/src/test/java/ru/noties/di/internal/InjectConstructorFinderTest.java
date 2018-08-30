@@ -10,16 +10,19 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import ru.noties.di.DiException;
+import ru.noties.di.internal.InjectConstructorFinder.Impl;
+
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class InjectConstructorFinderTest {
 
-    private InjectConstructorFinder.Impl impl;
+    private Impl impl;
 
     @Before
     public void before() {
-        impl = new InjectConstructorFinder.Impl();
+        impl = new Impl();
     }
 
     @Test

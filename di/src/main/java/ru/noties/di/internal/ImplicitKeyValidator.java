@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 
 import java.lang.reflect.Type;
 
+import ru.noties.di.DiException;
 import ru.noties.di.Key;
 
 abstract class ImplicitKeyValidator {
