@@ -2,7 +2,7 @@
 [![di](https://img.shields.io/maven-central/v/ru.noties/di.svg?label=di)](http://search.maven.org/#search|ga|1|g%3A%22ru.noties%22%20AND%20a%3A%22di%22)
 [![di-android](https://img.shields.io/maven-central/v/ru.noties/di-android.svg?label=di-android)](http://search.maven.org/#search|ga|1|g%3A%22ru.noties%22%20AND%20a%3A%22di-android%22)
 
-Small [Dependency Injection](#) library for **quick prototyping** and **fast builds**
+Small [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) library for **quick prototyping** and **fast builds**
 (reflection-based, no annotation processing). Everything is inside a scope. Scopes are organized
 in a tree structure with ability to be closed. No dependency can out-live its scope. Even singleton.
 

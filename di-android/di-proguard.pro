@@ -7,4 +7,3 @@
 }
 
 -keep class javax.inject.** { *; }
-#-keep class ru.noties.di.** { *; }
