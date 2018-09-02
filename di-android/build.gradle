@@ -23,3 +23,12 @@ dependencies {
         compileOnly it['support-fragment']
     }
 }
+
+afterEvaluate {
+    generateDebugBuildConfig.enabled = false
+    generateReleaseBuildConfig.enabled = false
+}
+
+if (isRelease()) {
+    apply from: config['push-aar-gradle']
+}

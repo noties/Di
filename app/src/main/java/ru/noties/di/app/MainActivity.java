@@ -10,11 +10,12 @@ import javax.inject.Inject;
 
 import ru.noties.debug.Debug;
 import ru.noties.di.Di;
+import ru.noties.di.Module;
 import ru.noties.di.android.FragmentInjector;
 import ru.noties.lifebus.Lifebus;
 import ru.noties.lifebus.activity.ActivityEvent;
 
-public class MainActivity extends FragmentActivity implements Di.Service {
+public class MainActivity extends FragmentActivity implements Di.Service, Navigator {
 
     @Inject
     private Lifebus<ActivityEvent> lifebus;
@@ -37,7 +38,12 @@ public class MainActivity extends FragmentActivity implements Di.Service {
         final long start = System.nanoTime();
 
         di
-                .fork("MainActivity", new ActivityLifebusModule(this))
+                .fork("MainActivity", new ActivityLifebusModule(this), new Module() {
+                    @Override
+                    public void configure() {
+                        bind(Navigator.class).with(() -> MainActivity.this);
+                    }
+                })
                 .inject(this)
                 .accept(FragmentInjector.init(getSupportFragmentManager()))
                 .accept(LifebusDi.closeOn(lifebus, ActivityEvent.DESTROY));
@@ -45,5 +51,10 @@ public class MainActivity extends FragmentActivity implements Di.Service {
         final long end = System.nanoTime();
         Debug.i("took: %d ns, %d ms", (end - start), (end - start) / 1000_000);
         Debug.i(lifebus);
+    }
+
+    @Override
+    public void goBack() {
+        onBackPressed();
     }
 }

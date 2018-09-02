@@ -25,7 +25,6 @@ import ru.noties.di.Module;
 public class DiImpl extends Di {
 
     // todo: we are setting isClosed flag after closing children.. should we do anything about it?
-    // todo: move diexception to public
     // todo: additional android module that will test with proguard enabled
     //      do not forget to put it into different package of `ru.noties.di.` as it
     //      has a proguard rule

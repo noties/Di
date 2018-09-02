@@ -36,7 +36,7 @@ public abstract class AndroidLogger extends Logger {
         }
 
         @NonNull
-        protected String tag() {
+        protected static String tag() {
 
             // here we must find first non-library call
 

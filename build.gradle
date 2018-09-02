@@ -13,18 +13,35 @@ allprojects {
         google()
         jcenter()
     }
+    group = GROUP
+    version = VERSION_NAME
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
+wrapper {
+    gradleVersion '4.10'
+    distributionType 'all'
+}
+
+if (hasProperty('local')) {
+    if (!hasProperty('LOCAL_MAVEN_URL')) {
+        throw new RuntimeException('Cannot publish to local maven as no such property exists: LOCAL_MAVEN_URL')
+    }
+    ext.RELEASE_REPOSITORY_URL = LOCAL_MAVEN_URL
+    ext.SNAPSHOT_REPOSITORY_URL = LOCAL_MAVEN_URL
+}
+
 ext {
 
     config = [
-            'min-sdk'    : 16,
-            'target-sdk' : 27,
-            'build-tools': '27.0.3'
+            'min-sdk'        : 16,
+            'target-sdk'     : 27,
+            'build-tools'    : '27.0.3',
+            'push-jar-gradle': 'https://raw.githubusercontent.com/noties/gradle-mvn-push/master/gradle-mvn-push-jar.gradle',
+            'push-aar-gradle': 'https://raw.githubusercontent.com/noties/gradle-mvn-push/master/gradle-mvn-push-aar.gradle'
     ]
 
     final def supportVersion = '27.1.1'
@@ -33,7 +50,7 @@ ext {
             'javax-inject'       : 'javax.inject:javax.inject:1',
             'lazy'               : 'ru.noties:lazy:1.1.0',
             'debug'              : 'ru.noties:debug:3.0.0@jar',
-            'lifebus'            : 'ru.noties:lifebus:1.0.1',
+            'lifebus'            : 'ru.noties:lifebus:1.0.2',
             'support-annotations': "com.android.support:support-annotations:$supportVersion",
             'support-fragment'   : "com.android.support:support-fragment:$supportVersion"
     ]
@@ -42,4 +59,10 @@ ext {
             'junit'  : 'junit:junit:4.12',
             'mockito': 'org.mockito:mockito-core:2.21.0'
     ]
+
+    isRelease = this.&isRelease
+}
+
+def isRelease() {
+    return hasProperty('release')
 }
